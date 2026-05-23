@@ -49,7 +49,7 @@ export async function proxyRoutes(fastify: FastifyInstance) {
   fastify.register(httpProxy, {
     upstream: env.FACULTAD_SERVICE_URL,
     prefix: '/api/v1/facultad',
-    rewritePrefix: '/api/v1/facultad',
+    rewritePrefix: '/api',
     undici: {
       bodyTimeout: 5000,
       headersTimeout: 5000,
