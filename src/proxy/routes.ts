@@ -28,6 +28,16 @@ export async function proxyRoutes(fastify: FastifyInstance) {
       headers['X-User-Roles'] = request.user.roles.join(',');
     }
 
+    // 3. Propagate OAuth / Proxy headers
+    if (request.headers['x-forwarded-host']) headers['x-forwarded-host'] = request.headers['x-forwarded-host'] as string;
+    else headers['x-forwarded-host'] = request.hostname;
+    
+    if (request.headers['x-forwarded-proto']) headers['x-forwarded-proto'] = request.headers['x-forwarded-proto'] as string;
+    else headers['x-forwarded-proto'] = request.protocol;
+
+    if (request.headers['x-forwarded-for']) headers['x-forwarded-for'] = request.headers['x-forwarded-for'] as string;
+    else headers['x-forwarded-for'] = request.ip;
+
     return headers;
   };
 
@@ -54,6 +64,26 @@ export async function proxyRoutes(fastify: FastifyInstance) {
       bodyTimeout: 5000,
       headersTimeout: 5000,
     },
+    replyOptions: {
+      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+    },
+  });
+
+  // 3. Proxy OAuth2 Initiation (Spring Security standard path)
+  fastify.register(httpProxy, {
+    upstream: env.AUTH_SERVICE_URL,
+    prefix: '/oauth2',
+    rewritePrefix: '/oauth2',
+    replyOptions: {
+      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+    },
+  });
+
+  // 4. Proxy OAuth2 Callbacks (Spring Security standard path)
+  fastify.register(httpProxy, {
+    upstream: env.AUTH_SERVICE_URL,
+    prefix: '/login/oauth2',
+    rewritePrefix: '/login/oauth2',
     replyOptions: {
       rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
     },

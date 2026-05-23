@@ -19,7 +19,14 @@ export async function authMiddleware(fastify: FastifyInstance) {
 
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     // 1. Define public paths bypass rules
-    const publicRoutes = ['/health', '/metrics', '/api/v1/auth/login', '/api/v1/auth/register'];
+    const publicRoutes = [
+      '/health', 
+      '/metrics', 
+      '/api/v1/auth/login', 
+      '/api/v1/auth/register',
+      '/oauth2',
+      '/login/oauth2'
+    ];
     const path = request.routerPath || request.url;
     
     if (publicRoutes.some(route => path.startsWith(route))) {
