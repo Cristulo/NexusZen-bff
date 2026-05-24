@@ -33,7 +33,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # Instalar UNICAMENTE las dependencias de producción para optimizar peso y seguridad
-RUN npm ci --only=production
+RUN npm ci --only=production --ignore-scripts
 
 # Copiar únicamente los archivos compilados de la etapa anterior
 COPY --from=build /usr/src/app/dist ./dist
