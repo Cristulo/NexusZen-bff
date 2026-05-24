@@ -5,8 +5,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
  */
 export async function healthRoutes(fastify: FastifyInstance) {
   fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-    let redisStatus = 'UNKNOWN';
-    
+    let redisStatus: string;
+
     // Check Redis connection if the plugin is registered
     if (fastify.redis) {
       try {
@@ -21,7 +21,7 @@ export async function healthRoutes(fastify: FastifyInstance) {
     }
 
     const isHealthy = redisStatus === 'UP' || redisStatus === 'NOT_CONFIGURED';
-    
+
     reply.status(isHealthy ? 200 : 503).send({
       status: isHealthy ? 'UP' : 'DOWN',
       timestamp: new Date().toISOString(),

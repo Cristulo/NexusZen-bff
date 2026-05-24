@@ -18,7 +18,7 @@ export async function rateLimiterMiddleware(fastify: FastifyInstance) {
     keyGenerator: (request) => {
       // If user is authenticated via JWT (attached by auth middleware), rate limit by User ID,
       // otherwise fallback to client IP address.
-      const userId = (request as any).user?.id;
+      const userId = (request as unknown as { user?: { id: string } }).user?.id;
       return userId ? `ratelimit:user:${userId}` : `ratelimit:ip:${request.ip}`;
     },
     errorResponseBuilder: (request, context) => {

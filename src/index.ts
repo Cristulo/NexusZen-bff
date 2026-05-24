@@ -13,14 +13,17 @@ import { metricsMiddleware } from './monitor/metrics.js';
 const fastify = Fastify({
   logger: {
     level: env.NODE_ENV === 'development' ? 'info' : 'warn',
-    transport: env.NODE_ENV === 'development' ? {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname',
-      }
-    } : undefined,
+    transport:
+      env.NODE_ENV === 'development'
+        ? {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'HH:MM:ss Z',
+              ignore: 'pid,hostname',
+            },
+          }
+        : undefined,
   },
   disableRequestLogging: env.NODE_ENV !== 'development', // Reduce log pollution in production
 });
@@ -28,7 +31,7 @@ const fastify = Fastify({
 // 2. Install global unhandled exception catcher
 fastify.setErrorHandler((error, request, reply) => {
   const correlationId = request.correlationId;
-  
+
   fastify.log.error({ error, correlationId }, 'Unhandled Gateway Exception');
 
   // Fastify or middleware structured error (e.g. Rate Limit 429)
@@ -65,16 +68,16 @@ async function bootstrap() {
       pressureHandler: (request, reply, type, value) => {
         fastify.log.warn(
           { type, value, correlationId: request.correlationId },
-          'BFF Gateway is under critical resource pressure!'
+          'BFF Gateway is under critical resource pressure!',
         );
-        
+
         reply.status(503).send({
           statusCode: 503,
           error: 'Service Unavailable',
           message: 'Server is currently overloaded. Please try again shortly.',
           correlationId: request.correlationId,
         });
-      }
+      },
     });
 
     // 5. Connect to Redis Client
@@ -102,7 +105,6 @@ async function bootstrap() {
     // 11. Start Fastify Server
     await fastify.listen({ port: env.PORT, host: env.HOST });
     console.log(`\n🚀 NexusZen BFF / API Gateway running at http://${env.HOST}:${env.PORT}\n`);
-
   } catch (err) {
     fastify.log.fatal({ err }, 'Failed to bootstrap the API Gateway');
     process.exit(1);

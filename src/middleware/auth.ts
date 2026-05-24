@@ -20,16 +20,16 @@ export async function authMiddleware(fastify: FastifyInstance) {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
     // 1. Define public paths bypass rules
     const publicRoutes = [
-      '/health', 
-      '/metrics', 
-      '/api/v1/auth/login', 
+      '/health',
+      '/metrics',
+      '/api/v1/auth/login',
       '/api/v1/auth/register',
       '/oauth2',
-      '/login/oauth2'
+      '/login/oauth2',
     ];
     const path = request.routerPath || request.url;
-    
-    if (publicRoutes.some(route => path.startsWith(route))) {
+
+    if (publicRoutes.some((route) => path.startsWith(route))) {
       return; // Public route, bypass check
     }
 
@@ -72,15 +72,14 @@ export async function authMiddleware(fastify: FastifyInstance) {
 
       request.log.info(
         { userId, correlationId: request.correlationId },
-        'User successfully authenticated at perimeter'
+        'User successfully authenticated at perimeter',
       );
-
     } catch (err) {
       request.log.warn(
         { err, correlationId: request.correlationId },
-        'Token signature verification failed'
+        'Token signature verification failed',
       );
-      
+
       reply.status(401).send({
         statusCode: 401,
         error: 'Unauthorized',

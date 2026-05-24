@@ -23,14 +23,13 @@ const httpRequestDurationSeconds = new client.Histogram({
  * Middleware/Plugin to collect Prometheus metrics and expose /metrics
  */
 export async function metricsMiddleware(fastify: FastifyInstance) {
-  
   // Hook to record metrics upon finishing responses
   fastify.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
     // Determine the route pattern or fall back to 'unmatched'
     const route = request.routeConfig?.url || 'unmatched';
     const method = request.method;
     const statusCode = reply.statusCode.toString();
-    
+
     // Fastify automatically records response time in ms
     const durationMs = reply.getResponseTime();
 
@@ -38,7 +37,7 @@ export async function metricsMiddleware(fastify: FastifyInstance) {
     httpRequestsTotal.inc({ method, route, status_code: statusCode });
     httpRequestDurationSeconds.observe(
       { method, route, status_code: statusCode },
-      durationMs / 1000
+      durationMs / 1000,
     );
   });
 

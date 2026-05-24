@@ -6,13 +6,15 @@ import { env } from '../config/env.js';
  * Configure high-performance Reverse Proxy endpoints to downstream microservices
  */
 export async function proxyRoutes(fastify: FastifyInstance) {
-  
   // Helper to compile internal communication headers
-  const getInternalHeaders = (request: FastifyRequest, incomingHeaders: any) => {
+  const getInternalHeaders = (
+    request: FastifyRequest,
+    incomingHeaders: Record<string, string | string[] | undefined>,
+  ) => {
     const headers: Record<string, string> = {};
 
     // Copy original header keys safely (avoiding array type warnings)
-    Object.keys(incomingHeaders).forEach(key => {
+    Object.keys(incomingHeaders).forEach((key) => {
       const val = incomingHeaders[key];
       if (val !== undefined) {
         headers[key] = Array.isArray(val) ? val.join(', ') : String(val);
@@ -29,13 +31,16 @@ export async function proxyRoutes(fastify: FastifyInstance) {
     }
 
     // 3. Propagate OAuth / Proxy headers
-    if (request.headers['x-forwarded-host']) headers['x-forwarded-host'] = request.headers['x-forwarded-host'] as string;
+    if (request.headers['x-forwarded-host'])
+      headers['x-forwarded-host'] = request.headers['x-forwarded-host'] as string;
     else headers['x-forwarded-host'] = request.hostname;
-    
-    if (request.headers['x-forwarded-proto']) headers['x-forwarded-proto'] = request.headers['x-forwarded-proto'] as string;
+
+    if (request.headers['x-forwarded-proto'])
+      headers['x-forwarded-proto'] = request.headers['x-forwarded-proto'] as string;
     else headers['x-forwarded-proto'] = request.protocol;
 
-    if (request.headers['x-forwarded-for']) headers['x-forwarded-for'] = request.headers['x-forwarded-for'] as string;
+    if (request.headers['x-forwarded-for'])
+      headers['x-forwarded-for'] = request.headers['x-forwarded-for'] as string;
     else headers['x-forwarded-for'] = request.ip;
 
     return headers;
@@ -51,7 +56,8 @@ export async function proxyRoutes(fastify: FastifyInstance) {
       headersTimeout: 5000,
     },
     replyOptions: {
-      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+      rewriteRequestHeaders: (request, headers) =>
+        getInternalHeaders(request as FastifyRequest, headers),
     },
   });
 
@@ -65,7 +71,8 @@ export async function proxyRoutes(fastify: FastifyInstance) {
       headersTimeout: 5000,
     },
     replyOptions: {
-      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+      rewriteRequestHeaders: (request, headers) =>
+        getInternalHeaders(request as FastifyRequest, headers),
     },
   });
 
@@ -75,7 +82,8 @@ export async function proxyRoutes(fastify: FastifyInstance) {
     prefix: '/oauth2',
     rewritePrefix: '/oauth2',
     replyOptions: {
-      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+      rewriteRequestHeaders: (request, headers) =>
+        getInternalHeaders(request as FastifyRequest, headers),
     },
   });
 
@@ -85,12 +93,13 @@ export async function proxyRoutes(fastify: FastifyInstance) {
     prefix: '/login/oauth2',
     rewritePrefix: '/login/oauth2',
     replyOptions: {
-      rewriteRequestHeaders: (request, headers) => getInternalHeaders(request as FastifyRequest, headers),
+      rewriteRequestHeaders: (request, headers) =>
+        getInternalHeaders(request as FastifyRequest, headers),
     },
   });
 
   fastify.log.info(
     { authService: env.AUTH_SERVICE_URL, facultadService: env.FACULTAD_SERVICE_URL },
-    'Reverse proxies successfully configured with 5000ms timeouts'
+    'Reverse proxies successfully configured with 5000ms timeouts',
   );
 }
