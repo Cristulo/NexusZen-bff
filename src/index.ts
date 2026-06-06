@@ -11,6 +11,7 @@ import { metricsMiddleware } from './monitor/metrics.js';
 
 // 1. Initialize Fastify with environment-tailored logging
 const fastify = Fastify({
+  trustProxy: true,
   logger: {
     level: env.NODE_ENV === 'development' ? 'info' : 'warn',
     transport:
