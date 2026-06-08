@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
+import fp from 'fastify-plugin';
 import { env } from '../config/env.js';
 
 declare module 'fastify' {
@@ -14,7 +15,7 @@ declare module 'fastify' {
 /**
  * Perimeter Authentication Middleware using JWT signature verification
  */
-export async function authMiddleware(fastify: FastifyInstance) {
+async function authMiddlewarePlugin(fastify: FastifyInstance) {
   fastify.decorateRequest('user', null);
 
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -24,10 +25,11 @@ export async function authMiddleware(fastify: FastifyInstance) {
       '/metrics',
       '/api/v1/auth/login',
       '/api/v1/auth/register',
+      '/api/v1/auth/public',
       '/oauth2',
       '/login/oauth2',
     ];
-    const path = request.routerPath || request.url;
+    const path = request.url;
 
     if (publicRoutes.some((route) => path.startsWith(route))) {
       return; // Public route, bypass check
@@ -54,6 +56,7 @@ export async function authMiddleware(fastify: FastifyInstance) {
         sub?: string;
         roles?: string[];
         role?: string;
+        iat?: number;
       };
 
       // Extract subject/ID and roles flexibly
@@ -62,6 +65,16 @@ export async function authMiddleware(fastify: FastifyInstance) {
 
       if (!userId) {
         throw new Error('Invalid JWT payload: missing sub/id identifier');
+      }
+
+      // Check session revocation in Redis
+      if (fastify.redis) {
+        const revocationTimestamp = await fastify.redis.get(`user_revocation:${userId}`);
+        if (revocationTimestamp && decoded.iat) {
+          if (decoded.iat * 1000 < Number(revocationTimestamp)) {
+            throw new Error('Token revoked by global logout');
+          }
+        }
       }
 
       // Attach credentials to request scope
@@ -89,3 +102,5 @@ export async function authMiddleware(fastify: FastifyInstance) {
     }
   });
 }
+
+export const authMiddleware = fp(authMiddlewarePlugin);

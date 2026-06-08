@@ -37,7 +37,10 @@ export async function proxyRoutes(fastify: FastifyInstance) {
 
     if (request.headers['x-forwarded-proto'])
       headers['x-forwarded-proto'] = request.headers['x-forwarded-proto'] as string;
-    else headers['x-forwarded-proto'] = request.protocol;
+    else
+      headers['x-forwarded-proto'] = request.hostname.includes('ngrok')
+        ? 'https'
+        : request.protocol;
 
     if (request.headers['x-forwarded-for'])
       headers['x-forwarded-for'] = request.headers['x-forwarded-for'] as string;
