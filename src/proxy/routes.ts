@@ -28,6 +28,9 @@ export async function proxyRoutes(fastify: FastifyInstance) {
     if (request.user) {
       headers['X-User-Id'] = request.user.id;
       headers['X-User-Roles'] = request.user.roles.join(',');
+      if (request.user.activeRole) {
+        headers['X-User-Active-Role'] = request.user.activeRole;
+      }
     }
 
     // 3. Propagate OAuth / Proxy headers

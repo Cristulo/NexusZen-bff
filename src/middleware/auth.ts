@@ -8,6 +8,7 @@ declare module 'fastify' {
     user?: {
       id: string;
       roles: string[];
+      activeRole?: string;
     };
   }
 }
@@ -77,15 +78,33 @@ async function authMiddlewarePlugin(fastify: FastifyInstance) {
         }
       }
 
+      // Extract and validate selected role
+      const selectedRoleHeader = request.headers['x-selected-role'];
+      let activeRole: string | undefined;
+
+      if (selectedRoleHeader) {
+        const requestedRole = Array.isArray(selectedRoleHeader)
+          ? selectedRoleHeader[0]
+          : selectedRoleHeader;
+        if (roles.includes(requestedRole)) {
+          activeRole = requestedRole;
+        }
+      }
+
+      if (!activeRole && roles.length > 0) {
+        activeRole = roles.includes('ROLE_USER') ? 'ROLE_USER' : roles[0];
+      }
+
       // Attach credentials to request scope
       request.user = {
         id: userId,
         roles: roles,
+        activeRole: activeRole,
       };
 
       request.log.info(
-        { userId, correlationId: request.correlationId },
-        'User successfully authenticated at perimeter',
+        { userId, activeRole, correlationId: request.correlationId },
+        'User successfully authenticated at perimeter with active role',
       );
     } catch (err) {
       request.log.warn(
